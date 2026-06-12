@@ -1,0 +1,10 @@
+{
+  "name": "Remix: 甲骨文守护·青铜狼人杀",
+  "description": "一款商周青铜古风、殷墟甲骨文推理的单人守护精灵解谜游戏。化身青铜守护精灵，解开谜题开箱获得甲骨，在密室叩问神兽获取印章锁限范围，登临校验台进行真伪单人推算，最终开启终极唤醒仪式拯救重器！",
+  "requestFramePermissions": [
+    "microphone"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
