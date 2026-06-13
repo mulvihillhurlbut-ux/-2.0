@@ -1869,6 +1869,7 @@ export default function App() {
 
             <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 self-center">
               <button
+                type="button"
                 onClick={() => {
                   setIsRulesModalOpen(true);
                   handlePlayWhoosh();
@@ -1881,6 +1882,7 @@ export default function App() {
               </button>
 
               <button
+                type="button"
                 onClick={() => {
                   setIsBondsGuideModalOpen(true);
                   handlePlayWhoosh();
@@ -1893,11 +1895,12 @@ export default function App() {
               </button>
 
               <button
+                type="button"
                 onClick={() => {
                   setIsBonesModalOpen(true);
                   handlePlayWhoosh();
                 }}
-                className="px-4 py-1.5 rounded-xl border border-amber-500/30 bg-amber-950/40 hover:bg-amber-900/40 text-amber-305 text-amber-300 hover:text-amber-200 font-bold text-xs flex items-center justify-center space-x-1.5 transition duration-200 cursor-pointer shadow-md"
+                className="px-4 py-1.5 rounded-xl border border-amber-500/30 bg-amber-950/40 hover:bg-amber-900/40 text-stone-300 hover:text-amber-205 font-bold text-xs flex items-center justify-center space-x-1.5 transition duration-200 cursor-pointer shadow-md"
                 title="查看各贞人英杰实时持有的卜兆甲骨数"
               >
                 <Database className="w-4 h-4 text-amber-500" />
@@ -1984,7 +1987,7 @@ export default function App() {
                   className="flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-amber-950/20 border border-amber-950 text-amber-400 hover:text-amber-300 transition text-[10px] font-bold cursor-pointer"
                   title="重新显示下方的时事与神兽图谱面板"
                 >
-                  <Sparkles className="w-3 h-3" />
+                  <Sparkles className="w-3.5 h-3.5" />
                   <span>召回时事与图谱</span>
                 </button>
               )}
@@ -2043,122 +2046,148 @@ export default function App() {
             {/* CONFIG/LOBBY INTERFACE */}
             <div className="space-y-4 border-t border-stone-800 pt-4 flex-1 flex flex-col justify-between">
               
-              <div className="space-y-3">
-                <div className="space-y-1.5 text-left">
-                  <label className="text-xxs font-mono text-amber-500/60 uppercase tracking-widest block font-bold">
-                    输入你的祭司化名:
-                  </label>
-                  <input
-                    type="text"
-                    maxLength={12}
-                    value={userName}
-                    onChange={(e) => setUserName(e.target.value)}
-                    placeholder="如：小贞人 (主角)"
-                    className="w-full bg-stone-950 border border-stone-800 px-4 py-2 text-stone-200 text-xs rounded-xl focus:outline-none focus:border-amber-500/50"
-                  />
-                </div>
-
-                {!isMultiplayer ? (
-                  // OFFLINE GAME INFO
-                  <div className="bg-black/40 rounded-xl p-3 text-[11px] text-stone-400 leading-relaxed font-sans space-y-2">
-                    <div>💥 <strong className="text-amber-400 font-medium">生存大挑战：</strong>7名好人在游戏中可能随时被卧底识破淘汰。但任何好人被淘汰不影响好人胜利，最终契约大合验只需要把所有好人神兽身份判定填报正确即可！</div>
-                    <div>🕯️ <strong className="text-amber-400 font-medium">卜骨解谜法：</strong>在规定时间（10分）内去破解汉字拆字谜，检索新华词典，解开古器宝箱获取甲骨。</div>
-                  </div>
-                ) : (
-                  // MULTIPLAYER ROOM SETUP
-                  <div className="space-y-4 text-left">
-                    {!roomId ? (
-                      invitedRoomId ? (
-                        <div className="space-y-4 bg-amber-950/15 border border-amber-500/20 p-4 rounded-2xl relative">
-                          <span className="absolute top-2 right-2 text-[8px] font-mono text-amber-500/40">
-                            INVITATION ACTIVE
-                          </span>
-                          <div className="space-y-1.5 text-left">
-                            <div className="flex items-center space-x-1.5 text-xs font-bold text-amber-300">
-                              <span className="animate-ping w-2.5 h-2.5 rounded-full bg-amber-400" />
-                              <span>🔮 仙友待机之约 · 房间 #{invitedRoomId}</span>
-                            </div>
-                            <p className="text-stone-400 text-xxs leading-normal font-sans">
-                              你受到了仙友的联机博弈邀请。因为契约不容许重名混淆，<strong>在连线进入之前，请先修改上方你的贞人化名（必须与默认名不同）</strong>。
-                            </p>
+              {!roomId ? (
+                // NOT YET IN A ROOM - SHOW START SCREEN INPUTS / INVITE CARDS
+                <div className="space-y-3">
+                  {invitedRoomId ? (
+                    // Dedicated Invitation Interface (Forces name change + Join button inside)
+                    <div className="space-y-4 text-left">
+                      <div className="space-y-4 bg-amber-950/15 border border-amber-500/20 p-4 rounded-2xl relative">
+                        <span className="absolute top-2 right-2 text-[8px] font-mono text-amber-500/40">
+                          INVITATION ACTIVE
+                        </span>
+                        <div className="space-y-1 text-left">
+                          <div className="flex items-center space-x-1.5 text-xs font-bold text-amber-300">
+                            <span className="animate-ping w-2 h-2 rounded-full bg-amber-400" />
+                            <span>🔮 仙友受邀之约 · 房间 #{invitedRoomId}</span>
                           </div>
+                          <p className="text-stone-300 text-xxs leading-normal font-sans">
+                            你受到了好友的博弈邀请。应天命之契，<strong>请先在下方输入你的贞人化名/祭司专属名字，然后点击加入</strong>：
+                          </p>
+                        </div>
 
-                          {userName.trim() === '小贞人 (主角)' ? (
-                            <div className="text-[10px] text-red-400 font-bold bg-red-950/20 border border-red-900/30 px-3 py-2 rounded-xl animate-pulse text-left font-sans">
-                              ⚠️ 默认名「小贞人 (主角)」不可用！请更改它（例如：安阳祭官、商周一贞、大荒行者等）。
-                            </div>
-                          ) : userName.trim() === '' ? (
-                            <div className="text-[10px] text-red-400 font-bold bg-red-950/20 border border-red-900/30 px-3 py-2 rounded-xl text-left font-sans">
-                              ⚠️ 名字不可为空，请在上方输入。
-                            </div>
-                          ) : (
-                            <div className="text-[10px] text-teal-400 font-bold bg-teal-950/25 border border-teal-900/40 px-3 py-2 rounded-xl text-left font-sans">
-                              ✓ 契印就绪！当前名号：【{userName}】。可以进入大厅。
-                            </div>
-                          )}
+                        {/* Explicit name input nested inside invite card */}
+                        <div className="space-y-1.5 text-left bg-stone-950/70 p-3 rounded-xl border border-stone-850">
+                          <label className="text-[10px] font-mono text-amber-550/60 uppercase tracking-widest block font-bold">
+                            ✍️ 贞人专属名号 (Name):
+                          </label>
+                          <input
+                            type="text"
+                            maxLength={12}
+                            value={userName}
+                            onChange={(e) => setUserName(e.target.value)}
+                            placeholder="请输入你想用的新名字（非空）"
+                            className="w-full bg-stone-950 border-2 border-amber-500/35 focus:border-amber-400 px-3 py-2 text-stone-200 text-xs rounded-lg focus:outline-none text-center font-bold"
+                          />
+                        </div>
 
-                          <button
-                            type="button"
-                            disabled={userName.trim() === '' || userName.trim() === '小贞人 (主角)'}
-                            onClick={() => {
-                              connectToMultiplayer(invitedRoomId);
-                              setInvitedRoomId(null);
-                            }}
-                            className={`w-full py-2.5 rounded-xl font-bold text-xs transition duration-200 cursor-pointer flex items-center justify-center space-x-2 border ${
-                              (userName.trim() === '' || userName.trim() === '小贞人 (主角)')
-                                ? 'bg-stone-900 text-stone-500 border-stone-850 cursor-not-allowed opacity-60'
-                                : 'bg-amber-600 hover:bg-amber-500 border-amber-400 text-stone-950 shadow-[0_0_15px_rgba(245,158,11,0.3)]'
-                            }`}
-                          >
-                            <span>🚪 确认名号 · 通灵合契加入</span>
-                          </button>
+                        {userName.trim() === '小贞人 (主角)' ? (
+                          <div className="text-[10px] text-red-400 font-bold bg-red-950/20 border border-red-900/30 px-3 py-2 rounded-xl animate-pulse text-left font-sans leading-tight">
+                            ⚠️ 默认名「小贞人 (主角)」不可直接使用。请改成新化名（如：安阳大祭司、卜卦高人 等）！
+                          </div>
+                        ) : userName.trim() === '' ? (
+                          <div className="text-[10px] text-red-400 font-bold bg-red-950/20 border border-red-900/30 px-3 py-2 rounded-xl text-left font-sans leading-tight">
+                            ⚠️ 名字不可为空，请输入。
+                          </div>
+                        ) : (
+                          <div className="text-[10px] text-teal-400 font-bold bg-teal-950/25 border border-teal-900/40 px-3 py-2 rounded-xl text-left font-sans leading-tight">
+                            ✓ 名号已就绪！你将以仙尊【{userName}】的大号加入大荒神殿！
+                          </div>
+                        )}
 
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setInvitedRoomId(null);
-                              setRoomInputId('');
-                            }}
-                            className="w-full py-1 text-center text-[10px] text-stone-500 hover:text-stone-300 transition"
-                          >
-                            ✕ 拒绝该邀请，创建我自己的神坛
-                          </button>
+                        <button
+                          type="button"
+                          disabled={userName.trim() === '' || userName.trim() === '小贞人 (主角)'}
+                          onClick={() => {
+                            connectToMultiplayer(invitedRoomId);
+                            setInvitedRoomId(null);
+                          }}
+                          className={`w-full py-2.5 rounded-xl font-bold text-xs transition duration-200 cursor-pointer flex items-center justify-center space-x-2 border ${
+                            (userName.trim() === '' || userName.trim() === '小贞人 (主角)')
+                              ? 'bg-stone-900 text-stone-500 border-stone-850 cursor-not-allowed opacity-60'
+                              : 'bg-amber-600 hover:bg-amber-500 border-amber-400 text-stone-950 shadow-[0_0_15px_rgba(245,158,11,0.3)]'
+                          }`}
+                        >
+                          <span>🚪 确立名号 · 加入房间</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setInvitedRoomId(null);
+                            setRoomInputId('');
+                            setIsMultiplayer(false);
+                          }}
+                          className="w-full py-1 text-center text-[10px] text-stone-500 hover:text-stone-300 transition"
+                        >
+                          ✕ 拒绝该邀请，玩单人模式
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    // Normal non-invited interface
+                    <>
+                      <div className="space-y-1.5 text-left">
+                        <label className="text-xxs font-mono text-amber-500/60 uppercase tracking-widest block font-bold">
+                          输入你的祭司化名:
+                        </label>
+                        <input
+                          type="text"
+                          maxLength={12}
+                          value={userName}
+                          onChange={(e) => setUserName(e.target.value)}
+                          placeholder="如：小贞人 (主角)"
+                          className="w-full bg-stone-950 border border-stone-800 px-4 py-2 text-stone-200 text-xs rounded-xl focus:outline-none focus:border-amber-500/50"
+                        />
+                      </div>
+
+                      {!isMultiplayer ? (
+                        // OFFLINE GAME INFO
+                        <div className="bg-black/40 rounded-xl p-3 text-[11px] text-stone-400 leading-relaxed font-sans space-y-2">
+                          <div>💥 <strong className="text-amber-400 font-medium">生存大挑战：</strong>7名好人在游戏中可能随时被卧底识破淘汰。但任何好人被淘汰不影响好人胜利，最终契约大合验只需要把所有好人神兽身份判定填报正确即可！</div>
+                          <div>🕯️ <strong className="text-amber-400 font-medium">卜骨解谜法：</strong>在规定时间（10分）内去破解汉字拆字谜，检索新华词典，解开古器宝箱获取甲骨。</div>
                         </div>
                       ) : (
-                        <div className="space-y-3">
-                          <div className="space-y-1.5">
-                            <label className="text-xxs font-mono text-amber-500/60 uppercase tracking-widest block font-bold">
-                              输入 4 位神坛密码/房号 (Room Code):
-                            </label>
-                            <input
-                              type="text"
-                              maxLength={4}
-                              value={roomInputId}
-                              onChange={(e) => setRoomInputId(e.target.value.toUpperCase())}
-                              placeholder="如：XY99"
-                              className="w-full bg-stone-950 border border-stone-850 px-4 py-2 text-stone-200 text-xs rounded-xl focus:outline-none focus:border-amber-500/50 uppercase tracking-widest font-mono text-center text-sm"
-                            />
-                          </div>
-                          {multiplayerError && (
-                            <p className="text-xxs text-red-400 bg-red-950/20 px-3 py-1.5 rounded-lg border border-red-900/35 leading-tight font-serif">
-                              ⚠️ {multiplayerError}
+                        // MULTIPLAYER ROOM SETUP (WHEN NO ACTIVE INVITATION)
+                        <div className="space-y-4 text-left">
+                          <div className="space-y-3">
+                            <div className="space-y-1.5">
+                              <label className="text-xxs font-mono text-amber-500/60 uppercase tracking-widest block font-bold">
+                                输入 4 位神坛密码/房号 (Room Code):
+                              </label>
+                              <input
+                                type="text"
+                                maxLength={4}
+                                value={roomInputId}
+                                onChange={(e) => setRoomInputId(e.target.value.toUpperCase())}
+                                placeholder="如：XY99"
+                                className="w-full bg-stone-950 border border-stone-850 px-4 py-2 text-stone-200 text-xs rounded-xl focus:outline-none focus:border-amber-500/50 uppercase tracking-widest font-mono text-center text-sm"
+                              />
+                            </div>
+                            {multiplayerError && (
+                              <p className="text-xxs text-red-400 bg-red-950/20 px-3 py-1.5 rounded-lg border border-red-900/35 leading-tight font-serif">
+                                ⚠️ {multiplayerError}
+                              </p>
+                            )}
+                            <p className="text-xxs text-stone-500 leading-normal">
+                              * 填入任意4位代码。若该神仙席位未创，将自动为你建立并设你为司仪；若已经开启，你将直接合契加入。
                             </p>
-                          )}
-                          <p className="text-xxs text-stone-500 leading-normal">
-                            * 填入任意4位代码。若该神仙席位未创，将自动为你建立并设你为司仪；若已经开启，你将直接合契加入。
-                          </p>
-                          
-                          <button
-                            type="button"
-                            onClick={() => connectToMultiplayer(roomInputId)}
-                            className="w-full py-2 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-400 text-xs font-bold transition cursor-pointer"
-                          >
-                            🚪 通灵合契 · 进入/创建神坛 Room
-                          </button>
+                            
+                            <button
+                              type="button"
+                              onClick={() => connectToMultiplayer(roomInputId)}
+                              className="w-full py-2 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-400 text-xs font-bold transition cursor-pointer"
+                            >
+                              🚪 通灵合契 · 进入/创建神坛 Room
+                            </button>
+                          </div>
                         </div>
-                      )
-                    ) : (
-                      // INSIDE MULTIPLAYER LOBBY
+                      )}
+                    </>
+                  )}
+                </div>
+              ) : (
+                // INSIDE MULTIPLAYER LOBBY
                       <div className="space-y-4">
                         <div className="flex items-center justify-between bg-amber-950/30 border border-amber-500/20 px-3 py-2 rounded-xl">
                           <div className="flex items-center space-x-2">
@@ -2269,8 +2298,6 @@ export default function App() {
                       </div>
                     )}
                   </div>
-                )}
-              </div>
 
               {/* ACTION ACCENT BUTTON */}
               <div className="pt-4">
@@ -2301,7 +2328,6 @@ export default function App() {
               </div>
 
             </div>
-          </div>
         ) : (
           /* PLAYABLE CONTENT PLATFORM */
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch flex-1">
@@ -2536,8 +2562,10 @@ export default function App() {
                                       let vBeast: BeastType | 'unknown' = 'unknown';
                                       if (isCompleted) {
                                         vBeast = p.beast || 'unknown';
+                                      } else if (p.isUser || p.id === localPlayer?.id) {
+                                        vBeast = p.beast || 'unknown';
                                       } else if (!localPlayer?.isGood) {
-                                        if (p.isUser || !p.isGood) {
+                                        if (!p.isGood) {
                                           vBeast = p.beast || 'unknown';
                                         } else {
                                           const markedBeasts = bambooScrollNotes[p.id] || [];
@@ -2629,6 +2657,15 @@ export default function App() {
                                           >
                                             {p.isGood ? '青铜守护' : '文创卧底'}
                                           </span>
+                                        ) : (p.isUser || p.id === localPlayer?.id) ? (
+                                          <span 
+                                            className={`text-[7.5px] font-bold px-1 py-0.5 rounded border inline-block max-w-full truncate text-ellipsis ${
+                                              p.isGood ? 'bg-teal-950 text-teal-300 border-teal-500/30' : 'bg-rose-950 text-rose-300 border-rose-500/30'
+                                            }`}
+                                            style={{ wordBreak: 'break-word' }}
+                                          >
+                                            {p.isGood ? '青铜守护 (你)' : '文创卧底 (你)'}
+                                          </span>
                                         ) : !localPlayer?.isGood ? (
                                           <span 
                                             className={`text-[7.5px] font-bold px-1 py-0.5 rounded border inline-block max-w-full truncate text-ellipsis ${
@@ -2636,7 +2673,7 @@ export default function App() {
                                             }`}
                                             style={{ wordBreak: 'break-word' }}
                                           >
-                                            {p.id === localPlayer?.id ? '文创卧底 (你)' : p.isGood ? '待考青铜精灵' : '文创卧底队友'}
+                                            {!p.isGood ? '文创卧底队友' : '待考青铜精灵'}
                                           </span>
                                         ) : (
                                           <span 
@@ -2666,8 +2703,10 @@ export default function App() {
                                             
                                             if (isCompleted) {
                                               visibleBeast = p.beast || 'unknown';
+                                            } else if (p.isUser || p.id === localPlayer?.id) {
+                                              visibleBeast = p.beast || 'unknown';
                                             } else if (!localPlayer?.isGood) {
-                                              if (p.isUser || !p.isGood) {
+                                              if (!p.isGood) {
                                                 visibleBeast = p.beast || 'unknown';
                                               } else {
                                                 const markedBeasts = bambooScrollNotes[p.id] || [];
@@ -3788,15 +3827,15 @@ export default function App() {
             </div>
 
             {/* RIGHT SIDE: ALTAR TEXT LOG MESSAGE FEED & PRIVATE CHAT (SPAN 4) */}
-            <div className="lg:col-span-4 flex flex-col space-y-5 h-full">
+            <div className="lg:col-span-4 flex flex-col space-y-5">
               
               {/* PRIMARY FEED OF LIVE EVENTS AND STORIES */}
-              <div className="bg-stone-900/40 border border-stone-800 rounded-2xl p-4 flex-1 flex flex-col justify-between overflow-hidden relative">
+              <div className="bg-stone-900/40 border border-stone-800 rounded-2xl p-4 flex flex-col h-[350px] overflow-hidden relative">
                 <span className="text-[9px] font-mono text-amber-500/60 uppercase tracking-widest block mb-1">
                   📜 殷商神殿契印纪事
                 </span>
 
-                <div className="overflow-y-auto custom-scrollbar my-2.5 h-[270px] max-h-[270px] space-y-2.5 pr-1.5 text-xxs">
+                <div className="overflow-y-auto custom-scrollbar my-2.5 flex-1 space-y-2.5 pr-1.5 text-xxs">
                   {logs
                     .filter((log) => {
                       if (localPlayer?.isGood && log.type === 'undercover') {
