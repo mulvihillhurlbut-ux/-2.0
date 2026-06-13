@@ -117,6 +117,14 @@ export default function App() {
   const [isStoryModalOpen, setIsStoryModalOpen] = useState<boolean>(true);
   const [isSpeaking, setIsSpeaking] = useState<boolean>(false);
   const speechSequenceIdRef = useRef<number>(0);
+  const logsEndRef = useRef<HTMLDivElement | null>(null);
+
+  // Auto scroll logs to the latest entry when logs change
+  useEffect(() => {
+    if (logsEndRef.current) {
+      logsEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [logs.length]);
 
   // Riddle box variables
   const [pickedPuzzle, setPickedPuzzle] = useState<WordPuzzle | null>(null);
@@ -129,6 +137,16 @@ export default function App() {
   const [numPuzzlesSolved, setNumPuzzlesSolved] = useState<number>(0);
   const [recentlyClickedStamps, setRecentlyClickedStamps] = useState<Record<string, boolean>>({});
   const [showPreviewSacrifice, setShowPreviewSacrifice] = useState<boolean>(false);
+  const [revealAllIdentities, setRevealAllIdentities] = useState<boolean>(false);
+  const [assassinationResult, setAssassinationResult] = useState<{
+    show: boolean;
+    killerName: string;
+    targetName: string;
+    targetId: number;
+    guessedBeast: BeastType;
+    isSuccess: boolean;
+    realBeast: BeastType;
+  } | null>(null);
 
   // Beast Aura Burst animation states
   const [auraBurstPlayerId, setAuraBurstPlayerId] = useState<number | null>(null);
@@ -834,6 +852,8 @@ export default function App() {
     setVerificationFeedback(null);
     setTeamCheckHistory([]);
     setNewCoverChatText('');
+    setRevealAllIdentities(false);
+    setAssassinationResult(null);
     setBambooScrollNotes(
       Object.fromEntries(initialPlayers.map(p => [p.id, []]))
     );
@@ -1196,6 +1216,7 @@ export default function App() {
     }));
 
     addLog('神兽雕像 (温和)', `“贞人啊，你拂去神象上的铜绿，法力回荡，你真实的守护法身为以下三者之一：【${userSelf.candidateOptions.join('、')}】。”`, 'totem_good');
+    setShangZhouNews(`【契典传薪】：大祭司【${userSelf.name}】（你）登入神灵密室叩问，获取了 3 选 1 真灵印章候选！`);
   };
 
   // Undercover User inquiries totem regarding target Good playercandidate beasts
@@ -1231,6 +1252,7 @@ export default function App() {
     }));
 
     addLog('神兽雕像 (冷峻)', `“文创窥探者，黑水滴落。你的唯一一次密室探查完成──你挑选的目标：${target.name} 对应的守护图腾已被解析为三选一：【${target.candidateOptions.join('、')}】。”`, 'totem_bad');
+    setShangZhouNews(`【诡影暗探】：有无名诡雾入侵密殿扣问！ ${userSelf.name} 对 ${target.name} 完成了 3 选 1 神魂印章刺探！`);
   };
 
   // Undercover User attempts elimination by guessing player beast in sacred chamber
@@ -1267,9 +1289,30 @@ export default function App() {
       handlePlaySizzle();
       
       addLog('系统特报', `【重大伤亡】天雷怒击！卧底 ${userSelf.name} 来无影去无踪（暗杀不消耗甲骨），准确戳破了 ${target.name} 的神兽法身：其真实身份确是 ──【${chamberEliminateGuessBeast}（对应${getVesselByBeast(chamberEliminateGuessBeast)}）】！${target.name} 被淘汰出局！`, 'system');
+      setShangZhouNews(`【大荒之痛】：守护之星【${target.name}】（ID: #${target.id}）被破译真身，惨遭神雷天谴，已陨落淘汰！其真身法宝为【${chamberEliminateGuessBeast}】！`);
+      
+      setAssassinationResult({
+        show: true,
+        killerName: userSelf.name,
+        targetName: target.name,
+        targetId: target.id,
+        guessedBeast: chamberEliminateGuessBeast,
+        isSuccess: true,
+        realBeast: target.beast,
+      });
     } else {
       // Wrong guess
       addLog('神兽雕像 (冷峻)', `【诅咒落空】密室迷雾翻腾，由于猜测失准，你的淘汰暗杀由于灵力不匹配失败了！${target.name} 并非【${chamberEliminateGuessBeast}】。卧底行动不消耗甲骨。`, 'totem_bad');
+      
+      setAssassinationResult({
+        show: true,
+        killerName: userSelf.name,
+        targetName: target.name,
+        targetId: target.id,
+        guessedBeast: chamberEliminateGuessBeast,
+        isSuccess: false,
+        realBeast: target.beast,
+      });
     }
   };
 
@@ -1328,6 +1371,7 @@ export default function App() {
     ]);
 
     addLog('神坛系统', `【三人行校验】消耗 1 甲骨，调查队伍：${p1.name}、${p2.name}、${p3.name}中是否含有【${checkedBeast}】。核验回响：【${presence ? '有' : '无'}】该动物。`, 'system');
+    setShangZhouNews(`【三人大合】：你引导 ${p1.name}、${p2.name} 与 ${p3.name} 开展上古印章联合核验（排查 ${checkedBeast}）。回响之光发出警告：【${presence ? '真印显赫 (有)' : '迷蒙无感 (无)'}】！`);
   };
 
   // Final submit state trigger
@@ -1493,6 +1537,7 @@ export default function App() {
             return p;
           }));
           addLog(bot.name, `进入神兽密室拜问了雕像，拿到了自己的3选1法身候选，并完成了印章验证，记录入了自己的竹简日志里。`, 'good');
+          setShangZhouNews(`【契典传薪】：守护精灵【${bot.name}】进入神秘古室叩问雕像，获取了 3 选 1 神印候选！`);
         } else if (coin < 0.65 && bot.oracleBones >= 1 && isAltarActivated) {
           // Starts team verification (only AFTER entering chamber)!
           const otherSurvivors = players.filter(p => p.id !== bot.id && !p.isEliminated);
@@ -1516,6 +1561,7 @@ export default function App() {
             
             addLog(bot.name, `发起了三人行核验关系（耗费自持1甲骨）：我、${s1.name}与${s2.name}这一队3人中是否含神兽【${qBeast}】？印章鸣响：【${hasIt ? '有' : '无'}】。`, 'good');
             handlePlayCrack();
+            setShangZhouNews(`【三人大合】：${bot.name} 引领 ${s1.name} 与 ${s2.name} 进行三人行印章校验（调查 ${qBeast} 契誓）。吉凶音律回响：【${hasIt ? '印信交辉 (有)' : '阒无回应 (无)'}】！`);
           }
         } else {
           const phrases = [
@@ -1562,6 +1608,7 @@ export default function App() {
               ...prev,
               `${bot.name}悄悄说：我已经使用我仅有的一次探查权完成印章验证，偷看到 ${target.name} 的候选三兽是：${target.candidateOptions.join('、')}！方便我们下一步精密射杀！`
             ]);
+            setShangZhouNews(`【鬼祟阴影】：卧底 ${bot.name} 携密印探秘神兽密殿，私下里对 ${target.name} 的法身契合度完成了监测！`);
           }
         } else if (coin < 0.6 && isAltarActivated) {
           // Attempt a Guess & Eliminate attempt on a random living Good player
@@ -1580,8 +1627,29 @@ export default function App() {
                 return p;
               }));
               addLog('系统警示', `【致命袭击】天雷怒劈！卧底 ${bot.name} 暗运密法淘汰好人（暗杀不消耗甲骨），准确戳破了 ${target.name} 的真身守护 ── 其正是【${chosenBeast}】！${target.name} 被淘汰！`, 'system');
+              setShangZhouNews(`【大荒之痛】：生命之灵【${target.name}】由于真实法核被卧底 ${bot.name} 精确射手刺破，于神罚雷劫中被淘汰出局！其真实法身为【${chosenBeast}】！`);
+              
+              setAssassinationResult({
+                show: true,
+                killerName: bot.name,
+                targetName: target.name,
+                targetId: target.id,
+                guessedBeast: chosenBeast,
+                isSuccess: true,
+                realBeast: target.beast,
+              });
             } else {
               addLog('大殿幽影', `暗室烛台闪烁，卧底 ${bot.name} 的淘汰被谜底之雾弹开，由于猜测失准失败了，且卧底淘汰并不消耗甲骨。`, 'totem_bad');
+              
+              setAssassinationResult({
+                show: true,
+                killerName: bot.name,
+                targetName: target.name,
+                targetId: target.id,
+                guessedBeast: chosenBeast,
+                isSuccess: false,
+                realBeast: target.beast,
+              });
             }
           }
         } else {
@@ -1627,6 +1695,14 @@ export default function App() {
     if (typeof window !== 'undefined' && window.navigator && window.navigator.vibrate) {
       window.navigator.vibrate(isAdding ? 25 : 15);
     }
+
+    // Broadcast stamp result to Shang Zhou News Ticker
+    const actor = players.find(p => p.id === playerId);
+    const actorName = actor ? actor.name : `席位 #${playerId}`;
+    const stampNews = isAdding
+      ? `【契印播报】：${actorName} 契书上成功加盖【${beast}】法印，神位名位已初露端倪！`
+      : `【契印播报】：${actorName} 契书上的【${beast}】法印已被抹除，祭坛命格在重新对位...`;
+    setShangZhouNews(stampNews);
   };
 
   // Automatically compile and sync all verified facts/clues into the bamboo scroll notes
@@ -2303,13 +2379,30 @@ export default function App() {
                 {activeTab === 'map' && (
                   <div className="space-y-4 flex-1 flex flex-col justify-between">
                     <div>
-                      <div className="flex items-center justify-between mb-3">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-3 gap-2">
                         <h3 className="text-xs font-bold font-sans text-stone-200 tracking-wider">
                           🏰 圣坛英杰席位（共 10 位精灵，活存一览）
                         </h3>
-                        <p className="text-[10px] text-stone-500 font-mono">
-                          主法坛席位布局
-                        </p>
+                        <div className="flex items-center space-x-2">
+                          <button
+                            id="btn-reveal-all-identities"
+                            onClick={() => {
+                              setRevealAllIdentities(prev => !prev);
+                              handlePlayCrack();
+                            }}
+                            className={`px-3 py-1.5 rounded-lg border text-xxs font-extrabold tracking-wider transition-all cursor-pointer flex items-center space-x-1 ${
+                              revealAllIdentities
+                                ? 'bg-amber-950/80 hover:bg-amber-900 border-amber-500 text-amber-300 shadow-[0_0_15px_rgba(245,158,11,0.5)] animate-pulse'
+                                : 'bg-stone-900 hover:bg-stone-850 border-stone-800 text-stone-300 shadow-md'
+                            }`}
+                          >
+                            <Eye className="w-3.5 h-3.5" />
+                            <span>{revealAllIdentities ? '🔮 一键合上卡牌' : '🔮 一键翻开全部卡牌'}</span>
+                          </button>
+                          <p className="text-[10px] text-stone-500 font-mono hidden sm:block">
+                            主法坛席位布局
+                          </p>
+                        </div>
                       </div>
 
                       {/* ACTIVE TRACKING HUD BAR */}
@@ -2336,7 +2429,7 @@ export default function App() {
                         {players.map((p) => {
                           const isUser = p.isUser;
                           const showUndercoverIdentity = !localPlayer?.isGood && !p.isGood; // Undercovers can see teammates!
-                          const isFlipped = flippedPlayers[p.id];
+                          const isFlipped = revealAllIdentities || flippedPlayers[p.id];
                           const isTracked = trackedBeast && (bambooScrollNotes[p.id] || []).includes(trackedBeast);
 
                           return (
@@ -3646,7 +3739,7 @@ export default function App() {
                   📜 殷商神殿契印纪事
                 </span>
 
-                <div className="flex-1 overflow-y-auto custom-scrollbar my-2.5 max-h-[380px] lg:max-h-none space-y-2.5 pr-1.5 text-xxs">
+                <div className="overflow-y-auto custom-scrollbar my-2.5 h-[270px] max-h-[270px] space-y-2.5 pr-1.5 text-xxs">
                   {logs
                     .filter((log) => {
                       if (localPlayer?.isGood && log.type === 'undercover') {
@@ -3694,6 +3787,7 @@ export default function App() {
                       </div>
                     );
                   })}
+                  <div ref={logsEndRef} />
                 </div>
 
                 {/* LOGS COUNT REFRESH INDICATOR */}
@@ -3971,6 +4065,100 @@ export default function App() {
         )}
 
       </div>
+
+      {/* 卧底暗杀（杀人）结果立即弹窗 POPUP MODAL */}
+      <AnimatePresence>
+        {assassinationResult?.show && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md"
+          >
+            <motion.div
+              initial={{ scale: 0.9, y: 40 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 40 }}
+              className="bg-gradient-to-b from-stone-950 via-stone-900 to-black border-2 border-red-500/40 w-full max-w-lg rounded-3xl p-6 md:p-8 space-y-6 shadow-[0_0_50px_rgba(239,68,68,0.25)] relative overflow-hidden text-left"
+            >
+              {/* Animated stream light bar */}
+              <div className="absolute top-0 inset-x-0 h-[2px] bg-gradient-to-r from-transparent via-red-500 to-transparent animate-pulse" />
+              
+              {/* Giant icon header */}
+              <div className="flex flex-col items-center justify-center text-center space-y-2">
+                <div className={`p-4 rounded-full border ${assassinationResult.isSuccess ? 'bg-red-950/50 border-red-500 text-red-500 animate-bounce' : 'bg-stone-950 border-stone-800 text-stone-500'}`}>
+                  {assassinationResult.isSuccess ? (
+                    <Skull className="w-12 h-12" />
+                  ) : (
+                    <Shield className="w-12 h-12" />
+                  )}
+                </div>
+                <h2 className={`text-xl md:text-2xl font-bold font-serif tracking-widest ${assassinationResult.isSuccess ? 'text-transparent bg-clip-text bg-gradient-to-r from-red-400 to-orange-500' : 'text-stone-300'}`}>
+                  {assassinationResult.isSuccess ? '【法身碎裂 · 命格陨落】' : '【天道反震 · 诅咒落空】'}
+                </h2>
+                <p className="text-xxs font-mono text-stone-500 tracking-widest">
+                  SHANG ZHOU ALTAR ELIMINATION BULLETIN
+                </p>
+              </div>
+
+              {/* Detail block */}
+              <div className="bg-stone-950/90 border border-stone-800/80 p-5 rounded-2xl space-y-3.5 relative">
+                {/* mesh layer */}
+                <div className="absolute inset-0 pointer-events-none opacity-5 bg-[linear-gradient(rgba(239,68,68,0.15)_1px,transparent_1px),linear-gradient(90deg,rgba(239,68,68,0.15)_1px,transparent_1px)] bg-[size:8px_8px] rounded-2xl" />
+                
+                <div className="flex justify-between items-center text-xs">
+                  <span className="text-stone-400 font-sans">暗探出手者 (Undercover):</span>
+                  <span className="text-stone-200 font-bold">{assassinationResult.killerName}</span>
+                </div>
+                <div className="flex justify-between items-center text-xs border-t border-stone-900 pt-3">
+                  <span className="text-stone-400 font-sans">受击的目标 (Target Player):</span>
+                  <span className="text-red-400 font-bold font-serif text-sm">
+                    {assassinationResult.targetName} <span className="text-stone-500 text-xxs font-mono bg-stone-900 border border-stone-850 px-1 py-0.5 rounded ml-1">席位 #{assassinationResult.targetId}</span>
+                  </span>
+                </div>
+                <div className="flex justify-between items-center text-xs border-t border-stone-900 pt-3">
+                  <span className="text-stone-400 font-sans">刺探锁定法宝 (Guessed):</span>
+                  <span className="text-amber-500 font-black font-serif bg-amber-950/20 border border-amber-900/50 px-2 py-0.5 rounded">
+                    {assassinationResult.guessedBeast}（对应 {getVesselByBeast(assassinationResult.guessedBeast)}）
+                  </span>
+                </div>
+                <div className="flex justify-between items-center text-xs border-t border-stone-900 pt-3">
+                  <span className="text-stone-400 font-sans">受害者真图腾 (True Beast):</span>
+                  <span className={`font-black font-serif px-2 py-0.5 rounded ${assassinationResult.isSuccess ? 'bg-red-950 border border-red-900/60 text-red-300' : 'bg-teal-900/20 border border-teal-900 text-teal-400'}`}>
+                    {assassinationResult.realBeast}（对应 {getVesselByBeast(assassinationResult.realBeast)}）
+                  </span>
+                </div>
+              </div>
+
+              {/* Outcome Statement */}
+              <p className="text-stone-400 text-xs text-center leading-relaxed font-sans px-2">
+                {assassinationResult.isSuccess ? (
+                  `“诅咒奏效了！伴随着殷墟圣坛的雷劫火光，契书上【${assassinationResult.targetName}】真实法核与卧底暗刺刺针完美咬合，法核顷刻暴毙粉碎，【${assassinationResult.targetName}】已被无情淘汰出局，遗憾离坛旁观！”`
+                ) : (
+                  `“神煞偏离！由于对【${assassinationResult.targetName}】对应的藏匿青铜尊猜测失准，反被其守护结界阻挡，【${assassinationResult.targetName}】安然无恙！此次偷袭行径宣告失败！”`
+                )}
+              </p>
+
+              {/* Close Button */}
+              <div className="pt-2">
+                <button
+                  onClick={() => {
+                    setAssassinationResult(prev => prev ? { ...prev, show: false } : null);
+                    handlePlayWhoosh();
+                  }}
+                  className={`w-full py-3 rounded-2xl font-bold tracking-widest text-xs transition-all active:scale-[0.98] cursor-pointer flex items-center justify-center space-x-2 border ${
+                    assassinationResult.isSuccess
+                      ? 'bg-red-600 hover:bg-red-500 text-white border-red-400 font-sans shadow-[0_0_15px_rgba(239,68,68,0.4)]'
+                      : 'bg-stone-900 hover:bg-stone-850 text-stone-200 border-stone-800'
+                  }`}
+                >
+                  <span>明白了，继续推演 (Acknowledge)</span>
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* 游戏规则手册 POPUP MODAL */}
       <AnimatePresence>
