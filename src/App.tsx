@@ -62,6 +62,7 @@ export default function App() {
   const [multiplayerError, setMultiplayerError] = useState<string | null>(null);
   const [clientId, setClientId] = useState<string>('');
   const wsRef = useRef<WebSocket | null>(null);
+  const [socket, setSocket] = useState<WebSocket | null>(null);
   const isRemoteUpdateRef = useRef<boolean>(false);
   const [lobbyChatText, setLobbyChatText] = useState<string>('');
   const [copySuccess, setCopySuccess] = useState<boolean>(false);
@@ -74,7 +75,7 @@ export default function App() {
     toggleVoice,
     toggleMute,
     handleVoiceSignal
-  } = useVoiceChat(wsRef.current, clientId, roomId, lobbyPlayers);
+  } = useVoiceChat(socket, clientId, roomId, lobbyPlayers);
   
   // Game states
   const [players, setPlayers] = useState<Player[]>([]);
@@ -622,6 +623,7 @@ export default function App() {
         case 'game_started':
           isRemoteUpdateRef.current = true;
           setMySeatId(data.seatId);
+          if (data.lobbyPlayers) setLobbyPlayers(data.lobbyPlayers);
           setPlayers(data.gameState.players);
           setBambooScrollNotes(data.gameState.bambooScrollNotes);
           setLogs(data.gameState.logs);
@@ -697,6 +699,7 @@ export default function App() {
 
     const ws = new WebSocket(wsUrl);
     wsRef.current = ws;
+    setSocket(ws);
 
     ws.onopen = () => {
       ws.send(JSON.stringify({
@@ -710,11 +713,13 @@ export default function App() {
 
     ws.onclose = () => {
       console.log('WebSocket disconnected');
+      setSocket(null);
     };
 
     ws.onerror = (err) => {
       console.error('WebSocket Error:', err);
       setMultiplayerError('连接圣坛失败，请确定服务器已绑定相应WebSocket');
+      setSocket(null);
     };
   };
 
@@ -2019,6 +2024,7 @@ export default function App() {
                   setRoomId('');
                   setMySeatId(null);
                   if (wsRef.current) wsRef.current.close();
+                  setSocket(null);
                 }}
                 className={`flex-1 py-2 text-center text-xs font-bold font-sans transition-all duration-300 rounded-xl cursor-pointer ${
                   !isMultiplayer
