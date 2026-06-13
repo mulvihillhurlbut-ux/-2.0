@@ -54,6 +54,8 @@ export default function App() {
   const [isMultiplayer, setIsMultiplayer] = useState<boolean>(false);
   const [roomId, setRoomId] = useState<string>('');
   const [roomInputId, setRoomInputId] = useState<string>('');
+  const [invitedRoomId, setInvitedRoomId] = useState<string | null>(null);
+  const [hasModifiedName, setHasModifiedName] = useState<boolean>(false);
   const [lobbyPlayers, setLobbyPlayers] = useState<{ id: string; name: string; seatId: number | null; isHost: boolean }[]>([]);
   const [isHost, setIsHost] = useState<boolean>(false);
   const [mySeatId, setMySeatId] = useState<number | null>(null);
@@ -825,10 +827,7 @@ export default function App() {
       const cleanId = urlRoomId.toUpperCase().trim();
       setIsMultiplayer(true);
       setRoomInputId(cleanId);
-      const t = setTimeout(() => {
-        connectToMultiplayer(cleanId);
-      }, 800);
-      return () => clearTimeout(t);
+      setInvitedRoomId(cleanId);
     }
   }, []);
 
@@ -2069,37 +2068,95 @@ export default function App() {
                   // MULTIPLAYER ROOM SETUP
                   <div className="space-y-4 text-left">
                     {!roomId ? (
-                      <div className="space-y-3">
-                        <div className="space-y-1.5">
-                          <label className="text-xxs font-mono text-amber-500/60 uppercase tracking-widest block font-bold">
-                            输入 4 位神坛密码/房号 (Room Code):
-                          </label>
-                          <input
-                            type="text"
-                            maxLength={4}
-                            value={roomInputId}
-                            onChange={(e) => setRoomInputId(e.target.value.toUpperCase())}
-                            placeholder="如：XY99"
-                            className="w-full bg-stone-950 border border-stone-850 px-4 py-2 text-stone-200 text-xs rounded-xl focus:outline-none focus:border-amber-500/50 uppercase tracking-widest font-mono text-center text-sm"
-                          />
+                      invitedRoomId ? (
+                        <div className="space-y-4 bg-amber-950/15 border border-amber-500/20 p-4 rounded-2xl relative">
+                          <span className="absolute top-2 right-2 text-[8px] font-mono text-amber-500/40">
+                            INVITATION ACTIVE
+                          </span>
+                          <div className="space-y-1.5 text-left">
+                            <div className="flex items-center space-x-1.5 text-xs font-bold text-amber-300">
+                              <span className="animate-ping w-2.5 h-2.5 rounded-full bg-amber-400" />
+                              <span>🔮 仙友待机之约 · 房间 #{invitedRoomId}</span>
+                            </div>
+                            <p className="text-stone-400 text-xxs leading-normal font-sans">
+                              你受到了仙友的联机博弈邀请。因为契约不容许重名混淆，<strong>在连线进入之前，请先修改上方你的贞人化名（必须与默认名不同）</strong>。
+                            </p>
+                          </div>
+
+                          {userName.trim() === '小贞人 (主角)' ? (
+                            <div className="text-[10px] text-red-400 font-bold bg-red-950/20 border border-red-900/30 px-3 py-2 rounded-xl animate-pulse text-left font-sans">
+                              ⚠️ 默认名「小贞人 (主角)」不可用！请更改它（例如：安阳祭官、商周一贞、大荒行者等）。
+                            </div>
+                          ) : userName.trim() === '' ? (
+                            <div className="text-[10px] text-red-400 font-bold bg-red-950/20 border border-red-900/30 px-3 py-2 rounded-xl text-left font-sans">
+                              ⚠️ 名字不可为空，请在上方输入。
+                            </div>
+                          ) : (
+                            <div className="text-[10px] text-teal-400 font-bold bg-teal-950/25 border border-teal-900/40 px-3 py-2 rounded-xl text-left font-sans">
+                              ✓ 契印就绪！当前名号：【{userName}】。可以进入大厅。
+                            </div>
+                          )}
+
+                          <button
+                            type="button"
+                            disabled={userName.trim() === '' || userName.trim() === '小贞人 (主角)'}
+                            onClick={() => {
+                              connectToMultiplayer(invitedRoomId);
+                              setInvitedRoomId(null);
+                            }}
+                            className={`w-full py-2.5 rounded-xl font-bold text-xs transition duration-200 cursor-pointer flex items-center justify-center space-x-2 border ${
+                              (userName.trim() === '' || userName.trim() === '小贞人 (主角)')
+                                ? 'bg-stone-900 text-stone-500 border-stone-850 cursor-not-allowed opacity-60'
+                                : 'bg-amber-600 hover:bg-amber-500 border-amber-400 text-stone-950 shadow-[0_0_15px_rgba(245,158,11,0.3)]'
+                            }`}
+                          >
+                            <span>🚪 确认名号 · 通灵合契加入</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setInvitedRoomId(null);
+                              setRoomInputId('');
+                            }}
+                            className="w-full py-1 text-center text-[10px] text-stone-500 hover:text-stone-300 transition"
+                          >
+                            ✕ 拒绝该邀请，创建我自己的神坛
+                          </button>
                         </div>
-                        {multiplayerError && (
-                          <p className="text-xxs text-red-400 bg-red-950/20 px-3 py-1.5 rounded-lg border border-red-900/35 leading-tight font-serif">
-                            ⚠️ {multiplayerError}
+                      ) : (
+                        <div className="space-y-3">
+                          <div className="space-y-1.5">
+                            <label className="text-xxs font-mono text-amber-500/60 uppercase tracking-widest block font-bold">
+                              输入 4 位神坛密码/房号 (Room Code):
+                            </label>
+                            <input
+                              type="text"
+                              maxLength={4}
+                              value={roomInputId}
+                              onChange={(e) => setRoomInputId(e.target.value.toUpperCase())}
+                              placeholder="如：XY99"
+                              className="w-full bg-stone-950 border border-stone-850 px-4 py-2 text-stone-200 text-xs rounded-xl focus:outline-none focus:border-amber-500/50 uppercase tracking-widest font-mono text-center text-sm"
+                            />
+                          </div>
+                          {multiplayerError && (
+                            <p className="text-xxs text-red-400 bg-red-950/20 px-3 py-1.5 rounded-lg border border-red-900/35 leading-tight font-serif">
+                              ⚠️ {multiplayerError}
+                            </p>
+                          )}
+                          <p className="text-xxs text-stone-500 leading-normal">
+                            * 填入任意4位代码。若该神仙席位未创，将自动为你建立并设你为司仪；若已经开启，你将直接合契加入。
                           </p>
-                        )}
-                        <p className="text-xxs text-stone-500 leading-normal">
-                          * 填入任意4位代码。若该神仙席位未创，将自动为你建立并设你为司仪；若已经开启，你将直接合契加入。
-                        </p>
-                        
-                        <button
-                          type="button"
-                          onClick={() => connectToMultiplayer(roomInputId)}
-                          className="w-full py-2 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-400 text-xs font-bold transition cursor-pointer"
-                        >
-                          🚪 通灵合契 · 进入/创建神坛 Room
-                        </button>
-                      </div>
+                          
+                          <button
+                            type="button"
+                            onClick={() => connectToMultiplayer(roomInputId)}
+                            className="w-full py-2 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-400 text-xs font-bold transition cursor-pointer"
+                          >
+                            🚪 通灵合契 · 进入/创建神坛 Room
+                          </button>
+                        </div>
+                      )
                     ) : (
                       // INSIDE MULTIPLAYER LOBBY
                       <div className="space-y-4">
