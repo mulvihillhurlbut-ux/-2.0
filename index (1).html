@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>青铜器守护·甲骨狼人杀</title>
+    <script type="module" crossorigin src="/assets/index-CioT_PCx.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-w99M_3gU.css">
+  </head>
+  <body>
+    <div id="root"></div>
+    <!-- 卡密验证系统 -->
+    <script>
+(function(){function sha256(message){return crypto.subtle.digest('SHA-256',new TextEncoder().encode(message)).then(function(b){return Array.from(new Uint8Array(b)).map(function(c){return c.toString(16).padStart(2,'0')}).join('')})}
+function getCanvasFingerprint(){try{var c=document.createElement('canvas');c.width=200;c.height=50;var ctx=c.getContext('2d');ctx.textBaseline='top';ctx.font="14px 'Arial'";ctx.fillStyle='#f60';ctx.fillRect(125,1,62,20);ctx.fillStyle='#069';ctx.fillText('MavisKami',2,15);ctx.fillStyle='rgba(102, 204, 0, 0.7)';ctx.fillText('KAMI-CHECK',4,45);return c.toDataURL()}catch(e){return'canvas-fallback'}}
+function getWebGLFingerprint(){try{var c=document.createElement('canvas');var gl=c.getContext('webgl')||c.getContext('experimental-webgl');if(!gl)return'no-webgl';var d=gl.getExtension('WEBGL_debug_renderer_info');return d?gl.getParameter(d.UNMASKED_VENDOR_WEBGL)+'~'+gl.getParameter(d.UNMASKED_RENDERER_WEBGL):gl.getParameter(gl.VENDOR)+'~'+gl.getParameter(gl.RENDERER)}catch(e){return'webgl-fallback'}}
+function generateFingerprint(){var components=[navigator.userAgent,navigator.language,screen.width+'x'+screen.height+'x'+screen.colorDepth,new Date().getTimezoneOffset(),navigator.hardwareConcurrency||'unknown',navigator.platform||'unknown',getCanvasFingerprint(),getWebGLFingerprint()];return sha256(components.join('|||'))}
+function getDeviceId(){var id=localStorage.getItem('__kami_device_id__');if(!id){id=Math.random().toString(36).substring(2)+Date.now();localStorage.setItem('__kami_device_id__',id)}return id}
+window.__kami={getFingerprint:generateFingerprint,getDeviceId:getDeviceId}})();
+    </script>
+    <script>
+(function(){var EP='/.netlify/functions/verify-key';var SK='__kami_passed__';function isV(){return localStorage.getItem(SK)==='1'}
+function init(){if(isV())return;if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',render)}else{render()}}
+function render(){if(document.getElementById('__kv__'))return;var d=document.createElement('div');d.id='__kv__';d.innerHTML='<style>#__kv__{position:fixed;inset:0;background:rgba(0,0,0,0.92);display:flex;align-items:center;justify-content:center;z-index:99999;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}.__kcard__{background:#fff;border-radius:16px;padding:40px 36px;width:360px;max-width:90vw;box-shadow:0 20px 60px rgba(0,0,0,0.4);text-align:center}.__kicon__{width:64px;height:64px;margin:0 auto 20px;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:28px}.__ktitle__{font-size:20px;font-weight:700;color:#1a1a2e;margin:0 0 8px}.__ksub__{font-size:14px;color:#666;margin:0 0 28px;line-height:1.5}.__kinput__{width:100%;padding:14px 16px;border:2px solid #e0e0e0;border-radius:10px;font-size:16px;text-align:center;letter-spacing:4px;outline:none;transition:border-color 0.2s;box-sizing:border-box;margin-bottom:16px}.__kinput__:focus{border-color:#667eea}.__kinput__.err{border-color:#e53e3e;animation:__ksh__ 0.4s ease}@keyframes __ksh__{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-6px)}40%,80%{transform:translateX(6px)}}.__kbtn__{width:100%;padding:14px;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:#fff;border:none;border-radius:10px;font-size:16px;font-weight:600;cursor:pointer;transition:opacity 0.2s,transform 0.1s}.__kbtn__:hover{opacity:0.9}.__kbtn__:active{transform:scale(0.98)}.__kbtn__:disabled{opacity:0.6;cursor:not-allowed}.__kmsg__{margin-top:14px;font-size:13px;min-height:20px;transition:all 0.2s}.__kmsg__.ok{color:#38a169}.__kmsg__.err{color:#e53e3e}.__kmsg__.info{color:#666}</style><div class="__kcard__"><div class="__kicon__">🔐</div><h2 class="__ktitle__">请输入卡密</h2><p class="__ksub__">输入您的访问卡密<br>每个卡密仅限一个设备使用</p><input type="text" class="__kinput__" id="__kki__" placeholder="请输入卡密" maxlength="32" autocomplete="off" spellcheck="false"/><button class="__kbtn__" id="__ksb__">验证</button><div class="__kmsg__" id="__kms__"></div></div>';document.body.appendChild(d);var inp=document.getElementById('__kki__');var btn=document.getElementById('__ksb__');var msg=document.getElementById('__kms__');btn.addEventListener('click',verify);inp.addEventListener('keydown',function(e){if(e.key==='Enter')verify()});setTimeout(function(){inp.focus()},100);function showMsg(t,m){msg.textContent=t;msg.className='__kmsg__ '+m}
+async function verify(){var k=inp.value.trim();if(!k){showMsg('请输入卡密','err');inp.classList.add('err');setTimeout(function(){inp.classList.remove('err')},400);return}btn.disabled=true;showMsg('正在验证...','info');try{var fp=await window.__kami.getFingerprint();var did=window.__kami.getDeviceId();var r=await fetch(EP,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:k,fingerprint:fp,deviceId:did})});var data=await r.json();if(data.ok){localStorage.setItem(SK,'1');showMsg('✅ 验证成功，正在进入...','ok');btn.textContent='验证成功！';setTimeout(function(){d.classList.add('hidden');setTimeout(function(){d.remove()},300)},800)}else{showMsg(data.error||'卡密无效','err');inp.classList.add('err');setTimeout(function(){inp.classList.remove('err')},400);btn.disabled=false}}catch(e){showMsg('网络错误，请检查网络后重试','err');btn.disabled=false}}}
+window.__kamiVerify={init:init};init()})();
+    </script>
+  </body>
+</html>
