@@ -142,6 +142,7 @@ export default function App() {
 
   // Riddle box variables
   const [pickedPuzzle, setPickedPuzzle] = useState<WordPuzzle | null>(null);
+  const [isPuzzleLoading, setIsPuzzleLoading] = useState<boolean>(false);
   const [dictionaryQuery, setDictionaryQuery] = useState<string>('');
   const [isDictionaryFlipping, setIsDictionaryFlipping] = useState<boolean>(false);
   const [dictionaryPageResult, setDictionaryPageResult] = useState<number | null>(null);
@@ -1215,26 +1216,48 @@ export default function App() {
     );
   };
 
-  // Triggering the Word Puzzle letter pickup
+  // Triggering the Word Puzzle letter pickup with smooth simulated loading
   const handlePickupEnvelope = () => {
     if (timeRemaining <= 600) {
       alert("⚠️ 【猜谜阶段已结束】解谶拆字字谜的 10 分钟已届满！当前处于第二阶段的「印章验证与组队考核（倒计时间少于 10:00）」，旧谜已经封存，新法印不复刷新。请尽管前往进行神秘阁印记探测和三人队形验证！");
       return;
     }
     
-    // Select random puzzle from 100 library
-    const randIdx = Math.floor(Math.random() * CHINESE_WORD_PUZZLES.length);
-    const puzzle = CHINESE_WORD_PUZZLES[randIdx];
-    
-    setPickedPuzzle(puzzle);
-    setDictionaryQuery('');
-    setDictionaryPageResult(null);
-    setChestInputCode('');
-    setChestState('closed');
-    setHasCollectedBone(false);
-    
+    setIsPuzzleLoading(true);
     handlePlayWhoosh();
-    addLog('系统', `主通道显现一个青绿色竹简书卷信封 [编号 #${puzzle.id}]！点击开始破解拆字法印！`, 'system');
+
+    setTimeout(() => {
+      // Select random puzzle from 100 library
+      const randIdx = Math.floor(Math.random() * CHINESE_WORD_PUZZLES.length);
+      const puzzle = CHINESE_WORD_PUZZLES[randIdx];
+      
+      setPickedPuzzle(puzzle);
+      setDictionaryQuery('');
+      setDictionaryPageResult(null);
+      setChestInputCode('');
+      setChestState('closed');
+      setHasCollectedBone(false);
+      setIsPuzzleLoading(false);
+      
+      handlePlayBell(520);
+      addLog('系统', `主通道显现一个青绿色竹简书卷信封 [编号 #${puzzle.id}]！点击开始破解拆字法印！`, 'system');
+    }, 750);
+  };
+
+  // Discard / refresh the current puzzle with smooth transitions
+  const handleDiscardPuzzle = () => {
+    setIsPuzzleLoading(true);
+    handlePlayWhoosh();
+    
+    setTimeout(() => {
+      setPickedPuzzle(null);
+      setDictionaryQuery('');
+      setDictionaryPageResult(null);
+      setChestInputCode('');
+      setChestState('closed');
+      setHasCollectedBone(false);
+      setIsPuzzleLoading(false);
+    }, 600);
   };
 
   // Search guessed word in Xinhua standard dictionary
@@ -2986,7 +3009,7 @@ export default function App() {
                                               className={`flex-1 py-0.5 rounded text-[8.5px] text-center border font-mono transition-all duration-100 cursor-pointer ${buttonStyle} ${recentlyClickedStamps[`${p.id}-${beastSymbol}`] ? 'animate-stamp-shimmer-pulse' : ''}`}
                                               title={isBeastOverflow ? `[超额警告] ${beastSymbol}已标 ${pinCount} 人 (限 ${limit} 尊)` : `契约标记可标注 ${beastSymbol}`}
                                             >
-                                              <span key={isStamped ? 'stamped' : 'unstamped'} className="inline-block animate-stamp-pop">
+                                              <span key={isStamped ? 'stamped' : 'unstamped'} className="inline-block animate-stamp-pop font-sans">
                                                 {beastSymbol}
                                               </span>
                                             </button>
@@ -3001,7 +3024,7 @@ export default function App() {
                                           setFlippedPlayers(prev => ({ ...prev, [p.id]: false }));
                                           handlePlayWhoosh();
                                         }}
-                                        className="w-full mt-1.5 py-0.5 rounded bg-stone-900 hover:bg-stone-850 text-stone-500 hover:text-amber-300 text-[7px] font-bold uppercase transition duration-150 border border-stone-850 cursor-pointer"
+                                        className="w-full mt-1.5 py-0.5 rounded bg-stone-900 hover:bg-stone-850 text-stone-300 hover:text-amber-300 text-[7px] font-bold uppercase transition duration-150 border border-stone-850 cursor-pointer"
                                       >
                                         👁 复归秘封 Box Back
                                       </button>
@@ -3079,7 +3102,7 @@ export default function App() {
                           <div className="flex items-center space-x-2">
                             <span className="w-2 h-2 rounded-full bg-amber-500 animate-ping" />
                             <span className="text-stone-300 font-bold text-[10.5px]">甲骨卜占 02</span>
-                            <span className="text-[7.5px] bg-amber-900/30 text-amber-400 border border-amber-600/20 px-1 rounded uppercase">未占·封存中</span>
+                            <span className="text-[7.5px] bg-amber-900/30 text-amber-400 border border-amber-600/20 px-1 rounded uppercase font-sans">未占·封存中</span>
                           </div>
                           <p className="text-[9px] text-stone-400 italic">
                             “龟腹甲裂痕深锁，巫待钻灼开兆，得受契文字...”
@@ -3115,190 +3138,251 @@ export default function App() {
                             <span>书房神道信封字谜解密（获取甲骨唯一法路）</span>
                           </h3>
                         </div>
-                        <span className="text-[10px] bg-amber-950/40 text-amber-500 border border-amber-600/20 px-1.5 py-0.2 rounded">
+                        <span className="text-[10px] bg-amber-950/40 text-amber-500 border border-amber-600/20 px-1.5 py-0.2 rounded font-sans">
                           限时 10 分钟 · 不掺杂游戏神职
                         </span>
                       </div>
 
-                      {/* NO ENVELOPE PICKED */}
-                      {!pickedPuzzle ? (
-                        <div className="py-12 text-center space-y-4 max-w-md mx-auto">
-                          <div className="w-16 h-16 rounded-full bg-stone-900 border border-stone-800 flex items-center justify-center mx-auto text-amber-500 animate-pulse">
-                            ✉️
-                          </div>
-                          <div className="space-y-1">
-                            <h4 className="text-sm font-bold text-stone-300">前方神道漂浮着未知的蜡封信信封...</h4>
-                            <p className="text-[11px] text-stone-500">
-                              信封内全部为小学生拆字字谜，解开新华字典11版拼版页码即可崩溃青铜锁，取出漂浮的甲骨核心道具。
-                            </p>
-                          </div>
-                          <button
-                            onClick={handlePickupEnvelope}
-                            className="px-5 py-2 rounded-full bg-gradient-to-r from-teal-600 to-teal-800 text-stone-100 font-bold text-xs transition border border-teal-500 hover:scale-105 cursor-pointer shadow-lg"
+                      <AnimatePresence mode="wait">
+                        {isPuzzleLoading ? (
+                          /* ELEGANT ANCIENT ENVELOPE MYSTICAL LOADING STATE */
+                          <motion.div
+                            key="puzzle-loading"
+                            initial={{ opacity: 0, scale: 0.96 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.96 }}
+                            transition={{ duration: 0.25, ease: "easeInOut" }}
+                            className="py-16 text-center space-y-4 max-w-sm mx-auto flex flex-col items-center justify-center"
                           >
-                            🖐️ 伸手拾取随机古书信封 (Pick Envelope)
-                          </button>
-                        </div>
-                      ) : (
-                        /* PUZZLE DECRYPT INTERACTION GRID */
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 items-stretch">
-                          
-                          {/* LEFT PANEL: HEAVY CARVED PUZZLE SHEET */}
-                          <div className="bg-stone-950/80 border border-amber-900/30 p-4 rounded-xl flex flex-col justify-between space-y-3 relative overflow-hidden">
-                            <span className="absolute top-1 right-2 text-[9px] font-mono text-stone-700">书信封号 #{pickedPuzzle.id}</span>
-                            <div className="space-y-2">
-                              <span className="text-[9px] font-mono text-amber-500/60 uppercase tracking-widest block">
-                                【拆字封印谜面】
-                              </span>
-                              <div className="bg-black/60 p-3 rounded border border-amber-950 text-amber-200 text-xs font-mono font-medium leading-relaxed tracking-wider">
-                                {pickedPuzzle.riddle}
+                            <div className="relative">
+                              <div className="absolute inset-0 rounded-full bg-amber-500/10 blur-xl animate-pulse" />
+                              <div className="relative w-16 h-16 rounded-full border-2 border-dashed border-amber-500/50 flex items-center justify-center text-3xl animate-spin" style={{ animationDuration: '4s' }}>
+                                ☯️
+                              </div>
+                              <div className="absolute inset-0 flex items-center justify-center text-xl">
+                                📜
+                              </div>
+                            </div>
+                            <div className="space-y-1">
+                              <h4 className="text-xs font-serif font-black text-amber-300 tracking-widest animate-pulse">
+                                正在解封契案，查核太古谜题...
+                              </h4>
+                              <p className="text-[9px] text-stone-500 font-mono tracking-wider">
+                                DECRYPTING SACRED SCRIPTS...
+                              </p>
+                            </div>
+                            {/* Mystical custom gold progress line */}
+                            <div className="w-48 h-[3px] bg-stone-900 border border-stone-850 rounded-full overflow-hidden relative">
+                              <motion.div
+                                initial={{ left: "-100%" }}
+                                animate={{ left: "100%" }}
+                                transition={{ repeat: Infinity, duration: 1.2, ease: "linear" }}
+                                className="absolute top-0 bottom-0 w-1/2 bg-gradient-to-r from-transparent via-amber-400 to-transparent"
+                              />
+                            </div>
+                          </motion.div>
+                        ) : !pickedPuzzle ? (
+                          /* NO ENVELOPE PICKED */
+                          <motion.div
+                            key="no-puzzle"
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -10 }}
+                            transition={{ duration: 0.25 }}
+                            className="py-12 text-center space-y-4 max-w-md mx-auto"
+                          >
+                            <div className="w-16 h-16 rounded-full bg-stone-900/80 border border-stone-800 flex items-center justify-center mx-auto text-amber-500 animate-pulse text-2xl shadow-inner">
+                              ✉️
+                            </div>
+                            <div className="space-y-1">
+                              <h4 className="text-sm font-bold text-stone-200">前方神道漂浮着未知的蜡封信信封...</h4>
+                              <p className="text-[11px] text-stone-400 max-w-xs mx-auto leading-relaxed">
+                                信封内全部为拆字字谜，解密后翻阅《新华字典》得出标准页码，输入页码即可开启青铜锁扣，取出核心道具「卜兆甲骨」。
+                              </p>
+                            </div>
+                            <button
+                              onClick={handlePickupEnvelope}
+                              className="px-5 py-2.5 rounded-full bg-gradient-to-b from-amber-500 to-amber-700 hover:from-amber-400 hover:to-amber-600 text-stone-950 font-black text-xs transition border border-amber-400 hover:scale-105 cursor-pointer shadow-[0_4px_15px_rgba(245,158,11,0.25)] flex items-center justify-center gap-2 mx-auto active:scale-95"
+                            >
+                              🖐️ 伸手拾取随机古书信封 (Pick Envelope)
+                            </button>
+                          </motion.div>
+                        ) : (
+                          /* PUZZLE DECRYPT INTERACTION GRID */
+                          <motion.div
+                            key={`puzzle-grid-${pickedPuzzle.id}`}
+                            initial={{ opacity: 0, scale: 0.98, y: 10 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.98, y: -10 }}
+                            transition={{ duration: 0.28, ease: "easeOut" }}
+                            className="grid grid-cols-1 md:grid-cols-2 gap-5 items-stretch"
+                          >
+                            
+                            {/* LEFT PANEL: HEAVY CARVED PUZZLE SHEET */}
+                            <div className="bg-stone-950/85 border border-amber-900/30 p-4 rounded-xl flex flex-col justify-between space-y-4 relative overflow-hidden shadow-2xl">
+                              <span className="absolute top-1 right-2 text-[9px] font-mono text-stone-600">书信封号 #{pickedPuzzle.id}</span>
+                              <div className="space-y-2.5">
+                                <span className="text-[9px] font-mono text-amber-500/80 uppercase tracking-widest block font-black">
+                                  【拆字封印谜面】
+                                </span>
+                                <div className="bg-black/80 p-4 rounded-lg border-2 border-amber-950 text-amber-200 text-sm font-sans font-bold leading-relaxed tracking-widest text-center shadow-inner relative">
+                                  <div className="absolute top-0 bottom-0 left-0 w-1 bg-gradient-to-b from-amber-800 to-transparent" />
+                                  {pickedPuzzle.riddle}
+                                </div>
+                              </div>
+
+                              {/* GUESS CHARACTER DICTIONARY FORM */}
+                              <div className="space-y-2.5 border-t border-stone-900/80 pt-3">
+                                <label className="text-[9px] text-stone-400 block font-sans font-bold">
+                                  🌲 请在下方尝试汉字并翻开字典：
+                                </label>
+                                <div className="flex space-x-2">
+                                  <input
+                                    type="text"
+                                    maxLength={1}
+                                    value={dictionaryQuery}
+                                    onChange={(e) => setDictionaryQuery(e.target.value)}
+                                    placeholder="输入单字"
+                                    className="w-20 bg-black border border-stone-800 text-center text-stone-100 text-sm font-bold rounded focus:outline-none focus:border-amber-500 placeholder-stone-700"
+                                  />
+                                  <button
+                                    onClick={handleSearchDictionary}
+                                    disabled={isDictionaryFlipping}
+                                    className="flex-1 py-1.5 px-3 bg-stone-900/90 border border-stone-800 hover:bg-stone-800 text-amber-400 hover:text-amber-300 font-bold rounded transition text-xxs flex items-center justify-center space-x-1.5 cursor-pointer disabled:opacity-50"
+                                  >
+                                    <Search className="w-3.5 h-3.5" />
+                                    <span>{isDictionaryFlipping ? '正在查新华字典...' : '查阅新华字典11版 (Query)'}</span>
+                                  </button>
+                                </div>
+                              </div>
+
+                              {/* DICTIONARY TURN BOOK PAGE ANIMATION ELEMENT */}
+                              <div className="bg-stone-900/40 p-2 text-center rounded border border-stone-800/60 min-h-[44px] flex items-center justify-center">
+                                {isDictionaryFlipping ? (
+                                  <span className="text-[10px] text-teal-400 font-mono animate-pulse">
+                                    📖 标准纸页飞速翻动动画一闪而过... 28%, 64%, 99%...
+                                  </span>
+                                ) : dictionaryPageResult !== null ? (
+                                  <div className="space-y-0.5">
+                                    <span className="text-[8.5px] text-stone-500 block font-mono">《新华字典 11 版》显示标准页码</span>
+                                    <div className="text-sm font-black text-teal-400 font-mono animate-fade-in">
+                                      第 ───【 <span className="text-amber-300 text-md px-1.5 font-bold">{dictionaryPageResult}</span> 】─── 页
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <span className="text-[9.5px] text-stone-500 font-sans">
+                                    字典静置于旁，输入单字后，翻页查看页码。
+                                  </span>
+                                )}
                               </div>
                             </div>
 
-                            {/* GUESS CHARACTER DICTIONARY FORM */}
-                            <div className="space-y-2 border-t border-stone-900 pt-3">
-                              <label className="text-[9px] text-stone-400 block">
-                                🌲 请在下方尝试汉字并翻开字典：
-                              </label>
-                              <div className="flex space-x-2">
-                                <input
-                                  type="text"
-                                  maxLength={1}
-                                  value={dictionaryQuery}
-                                  onChange={(e) => setDictionaryQuery(e.target.value)}
-                                  placeholder="输单汉字"
-                                  className="w-20 bg-black border border-stone-800 text-center text-stone-100 text-sm font-bold rounded focus:outline-none focus:border-amber-500"
-                                />
+                            {/* RIGHT PANEL: BRONZE UNLOCKED CHEST WITH Floating elements */}
+                            <div className="bg-gradient-to-b from-stone-900/90 to-stone-950/95 border border-stone-800 p-4 rounded-xl flex flex-col justify-between space-y-4 shadow-2xl relative">
+                              <span className="text-[9px] font-mono text-teal-400/80 uppercase tracking-widest block font-black">
+                                【青铜御宝锁扣宝箱】
+                              </span>
+
+                              {chestState === 'closed' && (
+                                <div className="text-center py-5 space-y-3">
+                                  <div className="w-12 h-12 bg-stone-950 rounded-full border border-stone-850 flex items-center justify-center mx-auto text-amber-500 shadow-md">
+                                    <Lock className="w-5 h-5 animate-pulse" />
+                                  </div>
+                                  <div className="space-y-1.5">
+                                    <label className="text-[10px] text-stone-400 block font-sans">
+                                      输入对应标准数字页码代码开启宝箱:
+                                    </label>
+                                    <div className="flex justify-center space-x-2 max-w-xs mx-auto">
+                                      <input
+                                        type="number"
+                                        pattern="[0-9]*"
+                                        placeholder="拼版页数"
+                                        value={chestInputCode}
+                                        onChange={(e) => setChestInputCode(e.target.value)}
+                                        className="w-24 bg-black border border-stone-800 text-center text-stone-105 text-xs font-bold rounded focus:outline-none focus:border-amber-500/80"
+                                      />
+                                      <button
+                                        onClick={handleUnlockChest}
+                                        className="px-3.5 py-1.5 bg-amber-500 hover:bg-amber-400 text-stone-950 font-black text-xxs transition duration-200 rounded cursor-pointer shadow-lg active:scale-95"
+                                      >
+                                        转起铜锁 (Unlock)
+                                      </button>
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* SUCCESS: GOLD FLOATING BONE ANIMATION */}
+                              {chestState === 'success' && (
+                                <div className="text-center py-4 space-y-3.5 relative">
+                                  <div className="absolute inset-0 bg-amber-500/5 rounded blur-xl pointer-events-none" />
+                                  <div className="space-y-1 z-10 relative">
+                                    <span className="text-[10px] text-amber-400 font-black animate-bounce block">
+                                      🔓 锁扣崩裂！箱盖向两侧翻褶展开！
+                                    </span>
+                                    <h4 className="text-[11px] text-stone-300 font-serif">温润白光盈盈泛起，一枚古篆甲骨浮游在空...</h4>
+                                  </div>
+
+                                  {!hasCollectedBone ? (
+                                    <div 
+                                      onClick={handleCollectFloatingBone}
+                                      className="w-14 h-18 bg-gradient-to-b from-amber-100 via-amber-300 to-amber-700 rounded-xl border-2 border-amber-300 flex flex-col items-center justify-center mx-auto cursor-pointer animate-pulse-slow shadow-2xl hover:scale-110 active:scale-95 duration-300"
+                                      title="点击收集此块浮空骨片放入行囊！"
+                                    >
+                                      <span className="text-xl">𐊃</span>
+                                      <span className="text-[7px] text-stone-900 font-bold uppercase mt-0.5 animate-bounce">Click</span>
+                                    </div>
+                                  ) : (
+                                    <div className="text-teal-400 text-xs font-black py-4 block flex items-center justify-center space-x-1.5 animate-fade-in">
+                                      <CheckCircle2 className="w-4 h-4 text-teal-400 animate-pulse" />
+                                      <span>甲骨已安全收入背包</span>
+                                    </div>
+                                  )}
+
+                                  <p className="text-[9px] text-stone-500 leading-normal font-sans italic">
+                                    收集甲骨后点击下方「清理此信/刷新」销毁本简，以便检索下一个信封。
+                                  </p>
+                                </div>
+                              )}
+
+                              {/* FAILURE BOX */}
+                              {chestState === 'fail' && (
+                                <div className="text-center py-6 space-y-2">
+                                  <div className="w-12 h-12 bg-red-950/20 border border-red-500/30 rounded-full flex items-center justify-center mx-auto text-red-500 animate-pulse">
+                                    <Trash2 className="w-5 h-5" />
+                                  </div>
+                                  <h4 className="text-xs font-bold text-red-400 font-serif">本次解密败裂，卜辞已化为碎渣</h4>
+                                  <p className="text-[10px] text-stone-500 leading-relaxed max-w-xs mx-auto">
+                                    页码输入错误致使锁爪失衡，信纸崩坏，请清理此信并尝试刷新新信封。
+                                  </p>
+                                </div>
+                              )}
+
+                              {/* DISCARD / REFRESH BUTTON */}
+                              <div className="border-t border-stone-950 pt-2 flex space-x-2">
                                 <button
-                                  onClick={handleSearchDictionary}
-                                  disabled={isDictionaryFlipping}
-                                  className="flex-1 py-1 px-3 bg-stone-900 border border-stone-800 hover:bg-stone-800 text-amber-400 hover:text-amber-300 font-bold rounded transition text-xxs flex items-center justify-center space-x-1.5 cursor-pointer"
+                                  onClick={handleDiscardPuzzle}
+                                  className="w-full py-2 bg-stone-900 hover:bg-stone-850 border border-stone-850 hover:border-stone-800 text-stone-400 hover:text-stone-200 transition text-[10px] font-bold rounded-lg cursor-pointer flex items-center justify-center gap-1 relative overflow-hidden"
                                 >
-                                  <Search className="w-3.5 h-3.5" />
-                                  <span>{isDictionaryFlipping ? '正在查新华字典...' : '查阅新华字典11版 (Query)'}</span>
+                                  🗑️ 清理此信/换领下一个信封 (Discard)
                                 </button>
                               </div>
                             </div>
 
-                            {/* DICTIONARY TURN BOOK PAGE ANIMATION ELEMENT */}
-                            <div className="bg-stone-900/60 p-2 text-center rounded border border-stone-800">
-                              {isDictionaryFlipping ? (
-                                <span className="text-[10px] text-teal-400 font-mono animate-pulse">
-                                  📖 标准纸页飞速翻动动画一闪而过... 28%, 64%, 99%...
-                                </span>
-                              ) : dictionaryPageResult !== null ? (
-                                <div className="space-y-0.5">
-                                  <span className="text-[9px] text-stone-500">《新华字典 11 版》显示标准页码</span>
-                                  <div className="text-sm font-black text-teal-400 font-mono">
-                                    第 ───【 {dictionaryPageResult} 】─── 页
-                                  </div>
-                                </div>
-                              ) : (
-                                <span className="text-[10px] text-stone-500 font-mono">
-                                  字典静置于旁，请在输入汉字后翻页查看页数。
-                                </span>
-                              )}
-                            </div>
-                          </div>
-
-                          {/* RIGHT PANEL: BRONZE UNLOCKED CHEST WITH Floating elements */}
-                          <div className="bg-gradient-to-b from-stone-900 to-stone-950 border border-stone-800 p-4 rounded-xl flex flex-col justify-between space-y-3">
-                            <span className="text-[9px] font-mono text-amber-500/60 uppercase tracking-widest block">
-                              【青铜御宝锁扣宝箱】
-                            </span>
-
-                            {chestState === 'closed' && (
-                              <div className="text-center py-6 space-y-3">
-                                <div className="w-12 h-12 bg-stone-950 rounded-full border border-stone-800 flex items-center justify-center mx-auto text-amber-400">
-                                  <Lock className="w-5 h-5" />
-                                </div>
-                                <div className="space-y-1.5">
-                                  <label className="text-[10px] text-stone-400 block">
-                                    输入对应标准数字页码代码开启宝箱:
-                                  </label>
-                                  <div className="flex justify-center space-x-2 max-w-xs mx-auto">
-                                    <input
-                                      type="number"
-                                      pattern="[0-9]*"
-                                      placeholder="输入页数"
-                                      value={chestInputCode}
-                                      onChange={(e) => setChestInputCode(e.target.value)}
-                                      className="w-24 bg-black border border-stone-800 text-center text-stone-100 text-xs font-bold rounded focus:outline-none"
-                                    />
-                                    <button
-                                      onClick={handleUnlockChest}
-                                      className="px-3 py-1 bg-amber-600 hover:bg-amber-500 text-stone-950 font-bold text-xxs transition duration-200 rounded cursor-pointer"
-                                    >
-                                      转起铜锁 (Unlock)
-                                    </button>
-                                  </div>
-                                </div>
-                              </div>
-                            )}
-
-                            {/* SUCCESS: GOLD FLOATING BONE ANIMATION */}
-                            {chestState === 'success' && (
-                              <div className="text-center py-4 space-y-3 relative">
-                                <div className="absolute inset-0 bg-amber-500/5 rounded blur-xl pointer-events-none" />
-                                <div className="space-y-1 z-10 relative">
-                                  <span className="text-[9px] text-amber-400 font-bold animate-bounce block">
-                                    🔓 锁扣崩裂！箱盖向两侧翻褶展开！
-                                  </span>
-                                  <h4 className="text-[11px] text-stone-300">温润白光盈盈泛起，一枚古篆甲骨浮游在空...</h4>
-                                </div>
-
-                                {!hasCollectedBone ? (
-                                  <div 
-                                    onClick={handleCollectFloatingBone}
-                                    className="w-14 h-18 bg-radial from-amber-200 via-yellow-100 to-amber-700/40 rounded-xl border-2 border-amber-300 flex flex-col items-center justify-center mx-auto cursor-pointer animate-pulse-slow shadow-2xl hover:scale-110 active:scale-95 duration-300"
-                                    title="点击收集此块浮空骨片放入行囊！"
-                                  >
-                                    <span className="text-xl">𐊃</span>
-                                    <span className="text-[7px] text-stone-900 font-bold uppercase mt-0.5 animate-bounce">Click</span>
-                                  </div>
-                                ) : (
-                                  <div className="text-teal-400 text-xs font-bold py-4 block flex items-center justify-center space-x-1">
-                                    <CheckCircle2 className="w-4 h-4" />
-                                    <span>甲骨已安全收入背包</span>
-                                  </div>
-                                )}
-
-                                <p className="text-[9px] text-stone-500 leading-normal">
-                                  收集甲骨后点击下方「继续探寻信纸」销毁本简，以便捡取下一本神道卷契。
-                                </p>
-                              </div>
-                            )}
-
-                            {/* FAILURE BOX */}
-                            {chestState === 'fail' && (
-                              <div className="text-center py-6 space-y-2">
-                                <div className="w-12 h-12 bg-red-950/20 border border-red-500/30 rounded-full flex items-center justify-center mx-auto text-red-500 animate-pulse">
-                                  <Trash2 className="w-5 h-5" />
-                                </div>
-                                <h4 className="text-xs font-bold text-red-400">本次解密败裂，卜辞已化为碎渣</h4>
-                                <p className="text-[10px] text-stone-500">
-                                  页码输入错误致使锁孔自闭销毁，请继续寻找灵气刷新下一个信封挑战。
-                                </p>
-                              </div>
-                            )}
-
-                            {/* DISCARD / REFresh BUTTON */}
-                            <div className="border-t border-stone-950 pt-2 flex space-x-2">
-                              <button
-                                onClick={() => setPickedPuzzle(null)}
-                                className="w-full py-1.5 bg-stone-900 hover:bg-stone-800 text-stone-400 hover:text-stone-300 transition text-[10px] font-bold rounded cursor-pointer"
-                              >
-                                🗑️ 扔掉该信/换领下一个信封 (Discard)
-                              </button>
-                            </div>
-                          </div>
-
-                        </div>
-                      )}
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
 
                     </div>
                   </div>
                 )}
+
+
+
+
+
+
+
 
                 {/* 3. CHAMBER TAB: SECRED CHAMBER STAMPS CANDIDATE SYSTEMS */}
                 {activeTab === 'chamber' && (
