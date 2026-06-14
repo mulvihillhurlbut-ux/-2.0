@@ -99,6 +99,17 @@ export default function App() {
     return players[0];
   }, [players, isMultiplayer, mySeatId]);
 
+  // Bulletproof selector to find local player's ID in any state array directly, avoiding React stale closure traps
+  const selectLocalPlayerId = useCallback((playerList: Player[]) => {
+    if (isMultiplayer && mySeatId !== null && mySeatId !== undefined) {
+      const match = playerList.find(p => p.id === mySeatId);
+      if (match) return match.id;
+    }
+    const userMatch = playerList.find(p => p.isUser);
+    if (userMatch) return userMatch.id;
+    return playerList[0]?.id || 1;
+  }, [isMultiplayer, mySeatId]);
+
   const oracleBones = localPlayer?.oracleBones || 0;
   const [isAltarActivated, setIsAltarActivated] = useState<boolean>(false);
   const [timeRemaining, setTimeRemaining] = useState<number>(1200); // 20 minutes (1200 seconds): 10m guess + 10m verify
@@ -120,12 +131,12 @@ export default function App() {
   const [isStoryModalOpen, setIsStoryModalOpen] = useState<boolean>(true);
   const [isSpeaking, setIsSpeaking] = useState<boolean>(false);
   const speechSequenceIdRef = useRef<number>(0);
-  const logsEndRef = useRef<HTMLDivElement | null>(null);
+  const logsContainerRef = useRef<HTMLDivElement | null>(null);
 
-  // Auto scroll logs to the latest entry when logs change
+  // Auto scroll logs container to the latest entry when logs change but do NOT scroll the parent window/page
   useEffect(() => {
-    if (logsEndRef.current) {
-      logsEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    if (logsContainerRef.current) {
+      logsContainerRef.current.scrollTop = logsContainerRef.current.scrollHeight;
     }
   }, [logs.length]);
 
@@ -197,6 +208,18 @@ export default function App() {
   const [isBondsCollapsed, setIsBondsCollapsed] = useState<boolean>(false);
   const [selectedBeastInBonds, setSelectedBeastInBonds] = useState<BeastType | null>(null);
   const [trackedBeast, setTrackedBeast] = useState<BeastType | null>(null);
+
+  // Exquisite Shang-Zhou floating progress toast notification list
+  const [progressToasts, setProgressToasts] = useState<{
+    id: string;
+    title: string;
+    description: string;
+    oracleBones: number;
+    unpairedCount: number;
+    totalGood: number;
+    solvedCount: number;
+    showTime: string;
+  }[]>([]);
 
   const derivedDeductions = useMemo(() => {
     const list: Record<number, {
@@ -836,6 +859,89 @@ export default function App() {
     }
   }, []);
 
+
+
+  // Tracks changes in oracleBones and numPuzzlesSolved to fire rich, highly polished progress notifications
+  const prevOracleBonesRef = useRef<number>(oracleBones);
+  const prevPuzzlesSolvedRef = useRef<number>(numPuzzlesSolved);
+
+  useEffect(() => {
+    if (!hasStarted) {
+      prevOracleBonesRef.current = oracleBones;
+      prevPuzzlesSolvedRef.current = numPuzzlesSolved;
+      return;
+    }
+
+    const boneDiff = oracleBones - prevOracleBonesRef.current;
+    const puzzleDiff = numPuzzlesSolved - prevPuzzlesSolvedRef.current;
+
+    const goodPlayers = players.filter(p => p.isGood);
+    const totalGood = goodPlayers.length;
+    const pairedGood = goodPlayers.filter(p => p.finalFilledBeast).length;
+    const unpairedCount = totalGood - pairedGood;
+
+    if (boneDiff > 0 || puzzleDiff > 0) {
+      // Trigger a toast details
+      let title = "✨ 天机微露 · 本源归正";
+      let description = "";
+
+      if (puzzleDiff > 0 && boneDiff > 0) {
+        description = `成功破译拆字法印，唤醒太古灵气！获得 1 枚「卜兆甲骨」(当前共持有 ${oracleBones} 枚)！`;
+      } else if (puzzleDiff > 0) {
+        description = `字谜玄机完美破解！解谶太古神言数已达 ${numPuzzlesSolved} 次！`;
+      } else if (boneDiff > 0) {
+        description = `神意降临！成功收集 1 枚「卜兆甲骨」(当前共持有 ${oracleBones} 枚)！`;
+      }
+
+      const id = `${Date.now()}-${Math.random()}`;
+      const nowStr = new Date().toLocaleTimeString('zh-CN', { hour12: false });
+
+      setProgressToasts(prev => [
+        ...prev,
+        {
+          id,
+          title,
+          description,
+          oracleBones,
+          unpairedCount,
+          totalGood,
+          solvedCount: numPuzzlesSolved,
+          showTime: nowStr
+        }
+      ]);
+
+      // Automatically dismiss this toast after 5 seconds
+      setTimeout(() => {
+        setProgressToasts(prev => prev.filter(t => t.id !== id));
+      }, 5000);
+    }
+
+    prevOracleBonesRef.current = oracleBones;
+    prevPuzzlesSolvedRef.current = numPuzzlesSolved;
+  }, [oracleBones, numPuzzlesSolved, hasStarted, players]);
+
+  // Countdown timer clock
+  useEffect(() => {
+    if (!hasStarted || isCompleted) return;
+    if (isMultiplayer && !isHost) return; // Keep countdown authoritative to host only!
+    
+    const interval = setInterval(() => {
+      setTimeRemaining(prev => {
+        if (prev === 601) {
+          addLog('系统', '【阶段转换】前十分钟「猜谜解谶」阶段顺利终结！神意信封不再刷新产出。当前正式入驻「后十分钟印章验证与组队考核」求索阶段！「神秘阁.印章」门扉与「组队核.研契」祭台已经全面解锁重放，请速速探查真隐藏法身！', 'system');
+        }
+        if (prev <= 1) {
+          clearInterval(interval);
+          addLog('系统', '【天命降临】整整 20 分钟（10分钟猜谜 + 10分钟验证）神龙大阵终极时辰宣告届满！所有印章与组队核验手段皆尽化为冰封，「终极验证合验台」已彻底复苏。胜败在此一举，好人们请登上大合验台并完成对全体十格神位配比最终大献祭！', 'system');
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [hasStarted, isCompleted, isMultiplayer, isHost]);
+
   // Start a fresh Game
   const startNewGame = () => {
     // Generate fresh role cards
@@ -909,6 +1015,7 @@ export default function App() {
 
   // Countdown timer clock
   useEffect(() => {
+    return; // Redundant timer deactivated to resolve desyncs
     if (!hasStarted || isCompleted) return;
     
     const interval = setInterval(() => {
@@ -1175,9 +1282,21 @@ export default function App() {
       setChestState('success');
       setIsAltarActivated(true);
       setNumPuzzlesSolved(prev => prev + 1);
+      
+      // Auto-collect bone immediately to guarantee accuracy - no click required!
+      setPlayers(prev => {
+        const targetId = selectLocalPlayerId(prev);
+        return prev.map((p) => {
+          if (p.id === targetId) return { ...p, oracleBones: p.oracleBones + 1 };
+          return p;
+        });
+      });
+      setHasCollectedBone(true);
+
       handlePlayBell(440);
       handlePlayBell(880);
-      addLog('系统', `恭喜！输入解密页码 ${cleanIn} [正确]：古铜锁迸裂，宝箱向两侧缓缓展开，甲骨白光上浮！并且唤醒并激活了殷商祭坛！`, 'system');
+      handlePlayBell(1200);
+      addLog('系统', `恭喜！输入解密页码 ${cleanIn} [正确]：古铜锁迸裂，宝箱向两侧缓缓展开，1 枚温润的「卜兆甲骨」已自动存入行囊！并且唤醒并激活了殷商祭坛！`, 'system');
     } else {
       // Failed - box stays closed and envelope burns out
       setChestState('fail');
@@ -1190,10 +1309,13 @@ export default function App() {
   const handleCollectFloatingBone = () => {
     if (hasCollectedBone || chestState !== 'success') return;
     
-    setPlayers(prev => prev.map((p) => {
-      if (p.id === (localPlayer?.id || 1)) return { ...p, oracleBones: p.oracleBones + 1 };
-      return p;
-    }));
+    setPlayers(prev => {
+      const targetId = selectLocalPlayerId(prev);
+      return prev.map((p) => {
+        if (p.id === targetId) return { ...p, oracleBones: p.oracleBones + 1 };
+        return p;
+      });
+    });
     setIsAltarActivated(true);
     setHasCollectedBone(true);
     addLog('系统', `获得核心道具：手掌拂过，收集 1 枚温润的「卜兆甲骨」并放入自己行囊中！`, 'system');
@@ -1349,10 +1471,13 @@ export default function App() {
     }
 
     // Deduct 1 bone
-    setPlayers(prev => prev.map((p) => {
-      if (p.id === (localPlayer?.id || 1)) return { ...p, oracleBones: p.oracleBones - 1 };
-      return p;
-    }));
+    setPlayers(prev => {
+      const targetId = selectLocalPlayerId(prev);
+      return prev.map((p) => {
+        if (p.id === targetId) return { ...p, oracleBones: Math.max(0, p.oracleBones - 1) };
+        return p;
+      });
+    });
     handlePlayCrack();
 
     const team = [p1, p2, p3];
@@ -1808,6 +1933,67 @@ export default function App() {
           animation: totemRipple 1.6s cubic-bezier(0.16, 1, 0.3, 1) infinite;
         }
       `}</style>
+
+      {/* EXQUISITE SHANG-ZHOU ASTRO CHEMICAL PROGRESS OVERLAY FLOTATION */}
+      <div id="progress-toasts-portal" className="fixed top-24 right-4 md:right-6 z-50 flex flex-col gap-3 max-w-sm pointer-events-none">
+        <AnimatePresence>
+          {progressToasts.map((toast) => (
+            <motion.div
+              key={toast.id}
+              initial={{ opacity: 0, x: 50, scale: 0.95 }}
+              animate={{ opacity: 1, x: 0, scale: 1 }}
+              exit={{ opacity: 0, x: 30, scale: 0.9, y: 10, filter: 'blur(4px)' }}
+              transition={{ type: 'spring', stiffness: 350, damping: 25 }}
+              className="pointer-events-auto bg-stone-950/95 border-2 border-amber-500/40 p-4 rounded-2xl shadow-[0_10px_30px_rgba(0,0,0,0.85),_0_0_20px_rgba(245,158,11,0.15)] backdrop-blur-md relative overflow-hidden flex flex-col space-y-2 max-w-[340px]"
+            >
+              {/* Top ambient gold accent line */}
+              <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-amber-400 to-transparent animate-pulse" />
+              
+              <div className="flex items-start space-x-3">
+                <div className="p-1 px-1.5 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-400 mt-0.5 shrink-0">
+                  <Sparkles className="w-4 h-4 text-amber-500 animate-pulse" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between gap-2">
+                    <h4 className="text-xs font-serif font-black text-amber-300 tracking-wide">
+                      {toast.title}
+                    </h4>
+                    <span className="text-[8px] font-mono text-stone-500 shrink-0">{toast.showTime}</span>
+                  </div>
+                  <p className="text-[10px] text-stone-300 mt-1 leading-relaxed">
+                    {toast.description}
+                  </p>
+                </div>
+              </div>
+
+              {/* Real-time remaining progress dashboard info */}
+              <div className="border-t border-stone-900/60 pt-2.5 mt-1 grid grid-cols-2 gap-2 text-center">
+                <div className="bg-stone-900/40 border border-stone-850 p-1.5 rounded-xl flex flex-col justify-center">
+                  <span className="text-[8px] text-stone-400 uppercase tracking-wider block font-sans">
+                    🔑 剩余待指引神位
+                  </span>
+                  <strong className="text-md font-sans text-amber-400/95 font-black mt-0.5 whitespace-nowrap">
+                    {toast.unpairedCount} <span className="text-[9px] font-normal text-stone-500">/ {toast.totalGood || 7} 位</span>
+                  </strong>
+                </div>
+
+                <div className="bg-stone-900/40 border border-stone-850 p-1.5 rounded-xl flex flex-col justify-center">
+                  <span className="text-[8px] text-stone-400 uppercase tracking-wider block font-sans">
+                    🎒 行囊持有甲骨
+                  </span>
+                  <strong className="text-md font-sans text-teal-400 font-extrabold mt-0.5 whitespace-nowrap">
+                    {toast.oracleBones} <span className="text-[9px] font-normal text-stone-500">枚</span>
+                  </strong>
+                </div>
+              </div>
+
+              <div className="text-[8.5px] text-center text-stone-500 block leading-tight font-sans italic pt-0.5 border-t border-stone-900/40">
+                破译字谜或拾得古简可获取甲骨，助推三人行核验
+              </div>
+            </motion.div>
+          ))}
+        </AnimatePresence>
+      </div>
 
       {/* SHANG-DYNASTY SACRED ALTAR AMBIENT DESIGN */}
       <div 
@@ -2664,14 +2850,21 @@ export default function App() {
                                             {p.isGood ? '青铜守护' : '文创卧底'}
                                           </span>
                                         ) : (p.isUser || p.id === localPlayer?.id) ? (
-                                          <span 
-                                            className={`text-[7.5px] font-bold px-1 py-0.5 rounded border inline-block max-w-full truncate text-ellipsis ${
-                                              p.isGood ? 'bg-teal-950 text-teal-300 border-teal-500/30' : 'bg-rose-950 text-rose-300 border-rose-500/30'
-                                            }`}
-                                            style={{ wordBreak: 'break-word' }}
-                                          >
-                                            {p.isGood ? '青铜守护 (你)' : '文创卧底 (你)'}
-                                          </span>
+                                          localPlayer?.isGood ? (
+                                            <span 
+                                              className="text-[7.5px] bg-black/40 text-stone-500 border border-stone-850 px-1 py-0.5 rounded inline-block max-w-full truncate text-ellipsis font-bold"
+                                              style={{ wordBreak: 'break-word' }}
+                                            >
+                                              待考星格 (你 - 身份未知)
+                                            </span>
+                                          ) : (
+                                            <span 
+                                              className="text-[7.5px] bg-rose-950 text-rose-300 border border-rose-500/30 px-1 py-0.5 rounded inline-block max-w-full truncate text-ellipsis font-bold"
+                                              style={{ wordBreak: 'break-word' }}
+                                            >
+                                              文创卧底 (你)
+                                            </span>
+                                          )
                                         ) : !localPlayer?.isGood ? (
                                           <span 
                                             className={`text-[7.5px] font-bold px-1 py-0.5 rounded border inline-block max-w-full truncate text-ellipsis ${
@@ -2710,7 +2903,16 @@ export default function App() {
                                             if (isCompleted) {
                                               visibleBeast = p.beast || 'unknown';
                                             } else if (p.isUser || p.id === localPlayer?.id) {
-                                              visibleBeast = p.beast || 'unknown';
+                                              if (localPlayer?.isGood) {
+                                                const markedBeasts = bambooScrollNotes[p.id] || [];
+                                                if (markedBeasts.length === 1) {
+                                                  visibleBeast = markedBeasts[0];
+                                                } else {
+                                                  visibleBeast = 'unknown';
+                                                }
+                                              } else {
+                                                visibleBeast = p.beast || 'unknown';
+                                              }
                                             } else if (!localPlayer?.isGood) {
                                               if (!p.isGood) {
                                                 visibleBeast = p.beast || 'unknown';
@@ -3578,6 +3780,8 @@ export default function App() {
                                   <div className="text-[9px] text-stone-500">
                                     {isCompleted ? (
                                       p.isGood ? (p.isUser ? '青铜守护 (你)' : '青铜守护') : (p.isUser ? '文创卧底 (你)' : '文创卧底')
+                                    ) : (p.isUser) ? (
+                                      localPlayer?.isGood ? '待考星格 (你 - 身份未知)' : '文创卧底 (你)'
                                     ) : !localPlayer?.isGood ? (
                                       p.isUser ? '文创卧底 (你)' : p.isGood ? '待考青铜精灵' : '文创卧底队友'
                                     ) : (
@@ -3841,7 +4045,7 @@ export default function App() {
                   📜 殷商神殿契印纪事
                 </span>
 
-                <div className="overflow-y-auto custom-scrollbar my-2.5 flex-1 space-y-2.5 pr-1.5 text-xxs">
+                <div ref={logsContainerRef} className="overflow-y-auto custom-scrollbar my-2.5 flex-1 space-y-2.5 pr-1.5 text-xxs">
                   {logs
                     .filter((log) => {
                       if (localPlayer?.isGood && log.type === 'undercover') {
@@ -3889,7 +4093,6 @@ export default function App() {
                       </div>
                     );
                   })}
-                  <div ref={logsEndRef} />
                 </div>
 
                 {/* LOGS COUNT REFRESH INDICATOR */}
